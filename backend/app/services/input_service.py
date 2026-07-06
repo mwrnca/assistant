@@ -7,9 +7,12 @@ class InputService:
         self.repository = repository
 
     def create_input(self, payload: InputCreate) -> InputOut:
+        content = payload.content
+        if payload.file_name:
+            content = f"[{payload.file_name}] {content}"
         input_record = self.repository.create(
             source=payload.source,
-            content=payload.content,
+            content=content,
         )
         return InputOut.model_validate(input_record)
 

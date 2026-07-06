@@ -5,6 +5,8 @@ from typing import Literal
 class InputCreate(BaseModel):
     source: Literal["TEXT", "VOICE", "PDF", "EMAIL", "API"] = Field(...)
     content: str = Field(..., min_length=1)
+    file_name: str | None = None
+    mime_type: str | None = None
 
 
 class InputOut(BaseModel):

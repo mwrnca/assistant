@@ -52,3 +52,17 @@ def test_create_input_returns_pending_status(client):
     payload = response.json()
     assert payload["status"] == "PENDING"
     assert isinstance(payload["id"], int)
+
+
+def test_upload_input_accepts_files_for_voice_sources(client):
+    response = client.post(
+        "/api/v1/input/upload",
+        data={"source": "VOICE", "content": "Transcript placeholder"},
+        files={"file": ("clip.wav", b"fake-audio-bytes", "audio/wav")},
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["source"] == "VOICE"
+    assert payload["status"] == "PENDING"
+    assert "clip.wav" in payload["content"]

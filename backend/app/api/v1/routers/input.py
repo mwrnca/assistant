@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.database.dependencies import get_db
@@ -19,6 +19,22 @@ def get_input_service(db: Session = Depends(get_db)) -> InputService:
 
 @router.post("", response_model=InputOut, status_code=status.HTTP_201_CREATED)
 def create_input(payload: InputCreate, service: InputService = Depends(get_input_service)):
+    return service.create_input(payload)
+
+
+@router.post("/upload", response_model=InputOut, status_code=status.HTTP_201_CREATED)
+def upload_input(
+    source: str = Form(...),
+    content: str = Form(default=""),
+    file: UploadFile | None = File(None),
+    service: InputService = Depends(get_input_service),
+):
+    payload = InputCreate(
+        source=source,
+        content=content or (file.filename if file else "Uploaded content"),
+        file_name=file.filename if file else None,
+        mime_type=file.content_type if file else None,
+    )
     return service.create_input(payload)
 
 
