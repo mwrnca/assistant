@@ -4,6 +4,7 @@ import './App.css'
 function App() {
   const [source, setSource] = useState('TEXT')
   const [content, setContent] = useState('')
+  const [file, setFile] = useState<File | null>(null)
   const [status, setStatus] = useState('')
   const [lastResult, setLastResult] = useState<null | { id: number; source: string; content: string; status: string }>(null)
   const [error, setError] = useState('')
@@ -14,10 +15,18 @@ function App() {
     setStatus('Submitting...')
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/v1/input', {
+      const useUpload = source === 'VOICE' || source === 'PDF' || source === 'EMAIL'
+      const formData = new FormData()
+      formData.append('source', source)
+      formData.append('content', content)
+      if (file && useUpload) {
+        formData.append('file', file)
+      }
+
+      const response = await fetch(useUpload ? '/api/v1/input/upload' : '/api/v1/input', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ source, content }),
+        body: useUpload ? formData : JSON.stringify({ source, content }),
+        headers: useUpload ? undefined : { 'Content-Type': 'application/json' },
       })
 
       if (!response.ok) {
@@ -28,6 +37,7 @@ function App() {
       setLastResult(data)
       setStatus('Saved successfully')
       setContent('')
+      setFile(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unexpected error')
       setStatus('Submission failed')
@@ -60,11 +70,18 @@ function App() {
             <textarea
               value={content}
               onChange={(event) => setContent(event.target.value)}
-              placeholder="Type something the assistant should remember..."
+              placeholder={source === 'API' ? 'Provide a payload or metadata for this API input...' : 'Type something the assistant should remember...'}
               rows={5}
               required
             />
           </label>
+
+          {(source === 'VOICE' || source === 'PDF' || source === 'EMAIL') ? (
+            <label className="field">
+              <span>Attachment</span>
+              <input type="file" onChange={(event) => setFile(event.target.files?.[0] ?? null)} />
+            </label>
+          ) : null}
 
           <button type="submit">Submit Input</button>
         </form>
